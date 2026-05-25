@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Квиз — IT & Веб-дизайн</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d2e;
+    --surface2: #242840;
+    --accent1: #6C63FF;
+    --accent2: #FF6584;
+    --accent3: #43C6AC;
+    --accent4: #F7971E;
+    --accent5: #a78bfa;
+    --text: #f0f0f8;
+    --muted: #888aaa;
+    --card-radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', Arial, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── SCREENS ─── */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ─── BOARD SCREEN ─── */
+  #board {
+    padding: 1.5rem 2rem 1rem;
+  }
+  .board-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+  .board-title {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: .5px;
+  }
+  .board-title span { color: var(--accent1); }
+  .timer-bar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .timer-display {
+    font-size: 42px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent3);
+    min-width: 80px;
+    text-align: center;
+    line-height: 1;
+  }
+  .timer-display.warning { color: var(--accent2); }
+  .timer-display.running { animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.7} }
+  .btn {
+    border: none; cursor: pointer; font-family: inherit;
+    border-radius: 8px; font-weight: 600; transition: all .15s;
+  }
+  .btn:hover { transform: translateY(-1px); filter: brightness(1.1); }
+  .btn:active { transform: translateY(0); }
+  .btn-sm { padding: 7px 14px; font-size: 13px; }
+  .btn-timer { background: var(--surface2); color: var(--text); padding: 8px 14px; font-size: 13px; border: 1px solid #333; }
+  .btn-timer.active-timer { background: var(--accent1); color: #fff; border-color: var(--accent1); }
+  .btn-stop { background: var(--accent2); color: #fff; padding: 8px 14px; font-size: 13px; }
+  .btn-reset { background: var(--surface2); color: var(--muted); padding: 8px 14px; font-size: 13px; border: 1px solid #333; }
+
+  /* ─── CATEGORIES GRID ─── */
+  .categories {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+  }
+  .category-col { display: flex; flex-direction: column; gap: 10px; }
+  .cat-header {
+    text-align: center;
+    padding: 12px 8px;
+    border-radius: var(--card-radius);
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    line-height: 1.3;
+  }
+  .cat-0 .cat-header { background: linear-gradient(135deg,#6C63FF,#8b84ff); }
+  .cat-1 .cat-header { background: linear-gradient(135deg,#FF6584,#ff8fa3); }
+  .cat-2 .cat-header { background: linear-gradient(135deg,#43C6AC,#6de8d0); }
+  .cat-3 .cat-header { background: linear-gradient(135deg,#F7971E,#fbb14b); }
+  .cat-4 .cat-header { background: linear-gradient(135deg,#a78bfa,#c4adfc); }
+  .cat-5 .cat-header { background: linear-gradient(135deg,#f472b6,#f9a8d4); }
+
+  .q-card {
+    background: var(--surface);
+    border-radius: var(--card-radius);
+    border: 1px solid #2a2d45;
+    padding: 0;
+    cursor: pointer;
+    transition: all .2s;
+    aspect-ratio: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 62px;
+    position: relative;
+    overflow: hidden;
+  }
+  .q-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    opacity: 0;
+    transition: opacity .2s;
+  }
+  .cat-0 .q-card::before { background: rgba(108,99,255,.15); }
+  .cat-1 .q-card::before { background: rgba(255,101,132,.15); }
+  .cat-2 .q-card::before { background: rgba(67,198,172,.15); }
+  .cat-3 .q-card::before { background: rgba(247,151,30,.15); }
+  .cat-4 .q-card::before { background: rgba(167,139,250,.15); }
+  .cat-5 .q-card::before { background: rgba(244,114,182,.15); }
+  .q-card:hover::before { opacity: 1; }
+  .q-card:hover { border-color: #444; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.4); }
+  .q-card .points {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -1px;
+  }
+  .cat-0 .q-card .points { color: #6C63FF; }
+  .cat-1 .q-card .points { color: #FF6584; }
+  .cat-2 .q-card .points { color: #43C6AC; }
+  .cat-3 .q-card .points { color: #F7971E; }
+  .cat-4 .q-card .points { color: #a78bfa; }
+  .cat-5 .q-card .points { color: #f472b6; }
+  .q-card.used {
+    background: var(--bg);
+    border-color: #1e2030;
+    cursor: default;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+  .q-card.used::before { display: none; }
+  .q-card.used .points { opacity: 0; }
+
+  /* ─── QUESTION SCREEN ─── */
+  #question {
+    padding: 2.5rem 3rem;
+    justify-content: space-between;
+    position: relative;
+  }
+  .q-screen-top {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .q-category-badge {
+    padding: 6px 18px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+  }
+  .q-points-badge {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -1px;
+  }
+  .q-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .q-text {
+    font-size: clamp(20px, 3vw, 32px);
+    font-weight: 600;
+    line-height: 1.5;
+    margin-bottom: 2.5rem;
+    max-width: 900px;
+  }
+  .q-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    max-width: 860px;
+  }
+  .q-option {
+    background: var(--surface);
+    border: 1.5px solid #2a2d45;
+    border-radius: var(--card-radius);
+    padding: 16px 20px;
+    font-size: 17px;
+    cursor: pointer;
+    transition: all .15s;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .q-option:hover { border-color: #555; background: var(--surface2); }
+  .q-option.correct {
+    background: rgba(67,198,172,.2);
+    border-color: #43C6AC;
+    color: #43C6AC;
+  }
+  .q-option.wrong {
+    background: rgba(255,101,132,.15);
+    border-color: #FF6584;
+    color: #FF6584;
+    opacity: .7;
+  }
+  .opt-letter {
+    font-weight: 700;
+    font-size: 15px;
+    min-width: 22px;
+    padding-top: 1px;
+  }
+  .q-open-answer {
+    font-size: 17px;
+    color: var(--muted);
+    font-style: italic;
+    margin-bottom: 1.5rem;
+  }
+  .answer-reveal {
+    background: rgba(67,198,172,.15);
+    border: 1.5px solid #43C6AC;
+    border-radius: var(--card-radius);
+    padding: 18px 22px;
+    font-size: 19px;
+    color: #43C6AC;
+    font-weight: 500;
+    max-width: 860px;
+    display: none;
+  }
+  .answer-reveal.visible { display: block; }
+  .q-footer {
+    display: flex;
+    gap: 12px;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .btn-back { background: var(--surface2); color: var(--muted); padding: 10px 20px; font-size: 14px; border: 1px solid #333; }
+  .btn-reveal { background: var(--accent3); color: #0f1117; padding: 11px 24px; font-size: 15px; }
+  .btn-reveal:hover { filter: brightness(1.1); }
+  .q-timer-inline {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--accent3);
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+  }
+  .q-timer-inline.warning { color: var(--accent2); }
+
+  /* ─── WARMUP SCREEN ─── */
+  #warmup {
+    padding: 2.5rem 3rem;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .warmup-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--accent1);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 1rem;
+  }
+  .warmup-q { font-size: clamp(22px,3.5vw,38px); font-weight: 700; line-height: 1.4; max-width: 800px; margin-bottom: 2rem; }
+  .warmup-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 700px; margin: 0 auto 2.5rem; }
+  .w-opt {
+    background: var(--surface);
+    border: 1.5px solid #2a2d45;
+    border-radius: 12px;
+    padding: 16px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all .15s;
+    display: flex; gap: 12px;
+  }
+  .w-opt:hover { border-color: var(--accent1); background: rgba(108,99,255,.1); }
+  .w-opt.correct { background: rgba(67,198,172,.2); border-color: #43C6AC; color: #43C6AC; }
+  .w-opt.wrong { background: rgba(255,101,132,.15); border-color: #FF6584; opacity: .6; }
+  .warmup-nav { display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap; }
+  .btn-main { background: var(--accent1); color: #fff; padding: 12px 28px; font-size: 15px; }
+  .btn-next { background: var(--accent3); color: #0f1117; padding: 12px 28px; font-size: 15px; }
+  .warmup-counter { color: var(--muted); font-size: 14px; }
+  .warmup-answer { background: rgba(67,198,172,.15); border: 1.5px solid #43C6AC; border-radius: 12px; padding:14px 20px; color:#43C6AC; font-size:17px; max-width:700px; margin:0 auto 1.5rem; display:none; }
+  .warmup-answer.visible{display:block;}
+
+  /* ─── TRANSITIONS ─── */
+  .fade { animation: fadeIn .25s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ WARMUP ═══════════ -->
+<div class="screen active" id="warmup">
+  <div style="width:100%;max-width:860px">
+    <div class="warmup-title">⚡ Разминка</div>
+    <div class="warmup-q" id="wq-text"></div>
+    <div class="warmup-opts" id="wq-opts"></div>
+    <div class="warmup-answer" id="wq-answer"></div>
+    <div class="warmup-nav">
+      <button class="btn btn-reveal" onclick="revealWarmup()" id="wq-reveal-btn">Показать ответ</button>
+      <button class="btn btn-next" onclick="nextWarmup()" id="wq-next-btn" style="display:none">Следующий вопрос →</button>
+      <button class="btn btn-main" onclick="goBoard()">Перейти к игре →</button>
+      <span class="warmup-counter" id="wq-counter"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ BOARD ═══════════ -->
+<div class="screen" id="board">
+  <div class="board-header">
+    <div class="board-title">🧠 Квиз <span>IT & Веб-дизайн</span></div>
+    <div class="timer-bar">
+      <div class="timer-display" id="timer-display">—</div>
+      <button class="btn btn-timer" onclick="startTimer(30)" id="btn-t30">30 с</button>
+      <button class="btn btn-timer" onclick="startTimer(60)" id="btn-t60">1 мин</button>
+      <button class="btn btn-stop" onclick="stopTimer()">⏹ Стоп</button>
+      <button class="btn btn-reset" onclick="resetTimer()">↺</button>
+    </div>
+  </div>
+  <div class="categories" id="categories-grid"></div>
+</div>
+
+<!-- ═══════════ QUESTION ═══════════ -->
+<div class="screen" id="question">
+  <div class="q-screen-top">
+    <button class="btn btn-back" onclick="goBoard()">← Назад</button>
+    <div class="q-category-badge" id="q-cat-badge"></div>
+    <div class="q-points-badge" id="q-pts-badge"></div>
+    <div style="margin-left:auto;display:flex;gap:10px;align-items:center">
+      <button class="btn btn-timer btn-sm" onclick="startTimer(30)">⏱ 30 с</button>
+      <button class="btn btn-timer btn-sm" onclick="startTimer(60)">⏱ 1 мин</button>
+      <button class="btn btn-stop btn-sm" onclick="stopTimer()">⏹</button>
+      <div class="q-timer-inline" id="q-timer-inline">—</div>
+    </div>
+  </div>
+  <div class="q-main fade" id="q-main">
+    <div class="q-text" id="q-text"></div>
+    <div class="q-options" id="q-opts"></div>
+    <div class="q-open-answer" id="q-open-hint"></div>
+    <div class="answer-reveal" id="q-answer-reveal"></div>
+  </div>
+  <div class="q-footer">
+    <button class="btn btn-reveal" id="q-reveal-btn" onclick="revealAnswer()">✓ Показать ответ</button>
+    <button class="btn btn-back" onclick="goBoard()">↩ Вернуться к таблице</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════
+
+const WARMUP = [
+  {
+    q: "Какое из четырёх высказываний лучше всего описывает алгоритм?",
+    opts: ["Графическое изображение процесса решения задачи","Любая программа, написанная на языке высокого уровня","Последовательность команд для исполнителя, приводящая к решению задачи","Набор данных, хранящихся в памяти компьютера"],
+    ans: 2
+  },
+  {
+    q: "Как называется вредоносная программа, которая маскируется под полезное ПО?",
+    opts: ["Драйвер","Блокировщик","Червь","Троян"],
+    ans: 3
+  },
+  {
+    q: "Какая служба Интернета преобразует буквенные имена сайтов в IP-адреса?",
+    opts: ["BFS","DNS","W3C","Nginx"],
+    ans: 1
+  },
+  {
+    q: "Каков максимальный размер символа (в байтах) в кодировке UTF-8?",
+    opts: ["2","4","8","16"],
+    ans: 1
+  },
+  {
+    q: "Как называется минимальная единица измерения количества информации?",
+    opts: ["Байт","Минибайт","Бит","Микробит"],
+    ans: 2
+  },
+  {
+    q: "Как называется функция или фрагмент кода, написанные с нуля, хотя решение уже существует?",
+    opts: ["Костыль","Фича","Велосипед","Дрова"],
+    ans: 2
+  },
+  {
+    q: "«Итальянская амфора», «испанская арроба», «коммерческое эт» — всё это названия одного символа. Как мы его чаще всего называем?",
+    opts: ["Больше","Амперсанд","Собака","Подчёркивание"],
+    ans: 2
+  }
+];
+
+const CATS = [
+  {
+    name: "Термины\nи сленг",
+    color: "#6C63FF",
+    qs: [
+      { pts:5,  q:"Как называют скрытые возможности, шутки или секреты, заложенные в программу разработчиками?", open:true, ans:"Пасхальные яйца (Easter eggs)" },
+      { pts:10, q:"Что в компьютерном сленге означает слово «ребут»?", open:true, ans:"Перезагрузка системы" },
+      { pts:20, q:"Небольшие файлы, которые сайты сохраняют в браузере, чтобы «запоминать» пользователей. В 1970-х на Unix их называли «волшебными печеньями». Как они называются сейчас?", open:true, ans:"Куки (cookies)" },
+      { pts:50, q:"Что означает слово «пинг» в компьютерной терминологии?", open:true, ans:"Сигнал-запрос для проверки доступности узла в сети; также — задержка соединения в мс" },
+      { pts:100, q:"Как называется старый код, который продолжает работать в современной системе, хотя написан давно и может быть устаревшим?", open:true, ans:"Легаси-код (legacy code)" }
+    ]
+  },
+  {
+    name: "Интернет",
+    color: "#FF6584",
+    qs: [
+      { pts:5,  q:"В 1969 году американские учёные соединили четыре компьютера и произвели первую передачу данных. Как называлась эта сеть — прообраз Интернета?", open:true, ans:"ARPANET" },
+      { pts:10, q:"В середине 90-х годов началось противостояние между Netscape и Microsoft. Под каким названием оно известно программистам и верстальщикам?", open:true, ans:"Войны браузеров (Browser Wars)" },
+      { pts:20, q:"Программист компании Netscape Брэндан Эйх создал первый прототип этого языка всего за 10 дней. Что это за язык?", open:true, ans:"JavaScript" },
+      { pts:50, q:"Почему IPv4 сменила шестая версия протокола, а не пятая? Куда делась IPv5?", open:true, ans:"IPv5 (Internet Stream Protocol) существовал, но использовался только в экспериментах и никогда не выходил в публичный интернет" },
+      { pts:100, q:"У протокола HTTP есть основные и вспомогательные методы. Кроме GET и POST — назовите ещё два любых.", open:true, ans:"PUT, DELETE, PATCH, HEAD, OPTIONS и другие" }
+    ]
+  },
+  {
+    name: "Игры",
+    color: "#43C6AC",
+    qs: [
+      { pts:5,  q:"Какая известная всем игра была реализована в качестве первой компьютерной игры?", open:true, ans:"Крестики-нолики (OXO / Nim, 1952)" },
+      { pts:10, q:"Какая игра является второй по популярности в мире после Minecraft?", open:true, ans:"GTA V (по числу проданных копий)" },
+      { pts:20, q:"Геймдизайнер Уилл Райт придумал концепцию игры после того, как потерял дом в пожаре в Окленде в 1991 году. Изначально это был редактор интерьеров. Что за игра?", open:true, ans:"The Sims" },
+      { pts:50, q:"В Fallout 3 разработчики добавили движущийся поезд в метро нестандартным способом. Что они сделали?", open:true, ans:"Надели невидимый объект поезда на NPC-персонажа и заставили его двигаться по рельсам" },
+      { pts:100, q:"Первым профессиональным киберспортсменом считается Деннис Фонг. Он выиграл турнир и получил красный Ferrari. В какую игру он играл?", open:true, ans:"Quake (1997)" }
+    ]
+  },
+  {
+    name: "Софт",
+    color: "#F7971E",
+    qs: [
+      { pts:5,  q:"Для написания первой версии Adobe Photoshop использовались два языка программирования. Какие?", open:true, ans:"Pascal и Assembly (ассемблер)" },
+      { pts:10, q:"В 2009 году Брайан Эктон получил отказ на собеседованиях в Twitter и Facebook. Что он создал потом?", open:true, ans:"WhatsApp" },
+      { pts:20, q:"В 1987 году студент Томас Нолл написал программу Display для вывода серого изображения на монохром Mac. Как называется эта программа сейчас?", open:true, ans:"Adobe Photoshop" },
+      { pts:50, q:"Язык PHP часто называют «компилируемо-интерпретируемым». Объясните почему.", open:true, ans:"PHP сначала компилирует код в байткод (opcode), а затем интерпретирует его виртуальной машиной Zend" },
+      { pts:100, q:"Microsoft специально добавила скрытый код в одну версию Windows, чтобы игра SimCity могла в ней запуститься. О какой версии Windows речь?", open:true, ans:"Windows 3.1" }
+    ]
+  },
+  {
+    name: "Цвет и\nграфика",
+    color: "#a78bfa",
+    qs: [
+      { pts:5,  q:"Какие три цвета смешиваются в модели RGB для получения белого?",
+        opts:["Красный, зелёный, синий","Красный, жёлтый, синий","Голубой, пурпурный, жёлтый","Оранжевый, зелёный, фиолетовый"], ans:0 },
+      { pts:10, q:"Чем векторная графика принципиально отличается от растровой?",
+        opts:["Векторная состоит из пикселей","Векторная хранит математические формулы кривых и фигур","Векторная занимает больше места","Векторную нельзя распечатать"], ans:1 },
+      { pts:20, q:"Какой формат изображения поддерживает прозрачность (альфа-канал) и чаще всего используется в веб-дизайне для логотипов и иконок?",
+        opts:["JPEG","BMP","PNG","TIFF"], ans:2 },
+      { pts:50, q:"Дизайнер задал цвет кнопки в CSS: #FF0000. Что это за цвет и как называется такая запись?", open:true, ans:"Красный. Запись — HEX (шестнадцатеричный код цвета): FF=красный, 00=зелёный, 00=синий" },
+      { pts:100, q:"В чём разница между форматами SVG и PNG? Назовите ключевое преимущество SVG для веб-дизайна.", open:true, ans:"SVG — векторный формат, масштабируется без потери качества при любом размере; PNG — растровый, теряет качество при масштабировании вверх" }
+    ]
+  },
+  {
+    name: "Структуры\nданных",
+    color: "#f472b6",
+    qs: [
+      { pts:5,  q:"Назовите ключевую особенность массива как структуры данных.", open:true, ans:"Фиксированный размер, элементы хранятся последовательно в памяти, доступ к любому элементу за O(1) по индексу" },
+      { pts:10, q:"Какова сложность вставки после известного элемента для двусвязного списка?",
+        opts:["O(n)","O(log n)","O(1)","O(n²)"], ans:2 },
+      { pts:20, q:"Какая структура данных представляет собой набор вершин, соединённых рёбрами, и используется для моделирования сетей?",
+        opts:["Дерево","Граф","Стек","Очередь"], ans:1 },
+      { pts:50, q:"Структура данных изображается как сбалансированное дерево, но реализуется массивом с последовательными элементами. Что это?", open:true, ans:"Бинарная куча (Binary Heap)" },
+      { pts:100, q:"В Python и C++ есть структура данных set. Несмотря на одинаковое название, они устроены по-разному. В чём отличие?", open:true, ans:"В Python set — хэш-таблица (неупорядоченная). В C++ std::set — красно-чёрное дерево (упорядоченное, O(log n) операции)" }
+    ]
+  }
+];
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let usedCards = {};
+let timerInterval = null;
+let timerSeconds = 0;
+let timerRunning = false;
+let currentCard = null;
+let warmupIdx = 0;
+let warmupAnswerShown = false;
+
+// ══════════════════════════════════════════
+// TIMER
+// ══════════════════════════════════════════
+function startTimer(secs) {
+  clearInterval(timerInterval);
+  timerSeconds = secs;
+  timerRunning = true;
+  updateTimerUI();
+  timerInterval = setInterval(() => {
+    timerSeconds--;
+    if (timerSeconds <= 0) { timerSeconds = 0; clearInterval(timerInterval); timerRunning = false; }
+    updateTimerUI();
+  }, 1000);
+}
+function stopTimer() { clearInterval(timerInterval); timerRunning = false; }
+function resetTimer() { clearInterval(timerInterval); timerRunning = false; timerSeconds = 0; updateTimerUI(); }
+function updateTimerUI() {
+  const txt = timerSeconds > 0 ? timerSeconds + 's' : (timerSeconds === 0 && !timerRunning && timerInterval === null ? '—' : '0s');
+  const warn = timerSeconds <= 10 && timerSeconds > 0;
+  const running = timerRunning;
+  ['timer-display','q-timer-inline'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = timerSeconds > 0 ? String(timerSeconds) : (timerRunning ? '0' : '—');
+    el.className = el.className.replace(/\s*(warning|running)/g,'');
+    if (warn) el.className += ' warning';
+    if (running) el.className += ' running';
+  });
+}
+
+// ══════════════════════════════════════════
+// WARMUP
+// ══════════════════════════════════════════
+function renderWarmup() {
+  const w = WARMUP[warmupIdx];
+  warmupAnswerShown = false;
+  document.getElementById('wq-text').textContent = w.q;
+  document.getElementById('wq-answer').className = 'warmup-answer';
+  document.getElementById('wq-answer').textContent = '';
+  document.getElementById('wq-reveal-btn').style.display = '';
+  document.getElementById('wq-next-btn').style.display = 'none';
+  document.getElementById('wq-counter').textContent = `${warmupIdx+1} / ${WARMUP.length}`;
+  const optsEl = document.getElementById('wq-opts');
+  optsEl.innerHTML = '';
+  const letters = ['A','B','C','D'];
+  w.opts.forEach((o, i) => {
+    const d = document.createElement('div');
+    d.className = 'w-opt';
+    d.innerHTML = `<span style="font-weight:700;color:var(--muted);min-width:20px">${letters[i]}</span><span>${o}</span>`;
+    d.onclick = () => {
+      if (warmupAnswerShown) return;
+      document.querySelectorAll('#wq-opts .w-opt').forEach((el,j) => {
+        el.className = 'w-opt' + (j===w.ans?' correct':' wrong');
+        el.onclick = null;
+      });
+      warmupAnswerShown = true;
+      document.getElementById('wq-reveal-btn').style.display = 'none';
+      document.getElementById('wq-next-btn').style.display = '';
+    };
+    optsEl.appendChild(d);
+  });
+}
+function revealWarmup() {
+  const w = WARMUP[warmupIdx];
+  const letters = ['A','B','C','D'];
+  document.querySelectorAll('#wq-opts .w-opt').forEach((el,j) => {
+    el.className = 'w-opt' + (j===w.ans?' correct':'');
+    el.onclick = null;
+  });
+  warmupAnswerShown = true;
+  document.getElementById('wq-reveal-btn').style.display = 'none';
+  document.getElementById('wq-next-btn').style.display = '';
+}
+function nextWarmup() {
+  warmupIdx = (warmupIdx + 1) % WARMUP.length;
+  renderWarmup();
+}
+
+// ══════════════════════════════════════════
+// BOARD
+// ══════════════════════════════════════════
+function buildBoard() {
+  const grid = document.getElementById('categories-grid');
+  grid.innerHTML = '';
+  CATS.forEach((cat, ci) => {
+    const col = document.createElement('div');
+    col.className = `category-col cat-${ci}`;
+    const hdr = document.createElement('div');
+    hdr.className = 'cat-header';
+    hdr.textContent = cat.name;
+    col.appendChild(hdr);
+    cat.qs.forEach((q, qi) => {
+      const key = `${ci}-${qi}`;
+      const card = document.createElement('div');
+      card.className = 'q-card' + (usedCards[key] ? ' used' : '');
+      card.innerHTML = `<span class="points">${q.pts}</span>`;
+      if (!usedCards[key]) {
+        card.onclick = () => openQuestion(ci, qi, key, card);
+      }
+      col.appendChild(card);
+    });
+    grid.appendChild(col);
+  });
+}
+function goBoard() {
+  stopTimer();
+  showScreen('board');
+  buildBoard();
+}
+function openQuestion(ci, qi, key, card) {
+  usedCards[key] = true;
+  currentCard = { ci, qi, key };
+  const cat = CATS[ci];
+  const q = cat.qs[qi];
+
+  const badge = document.getElementById('q-cat-badge');
+  badge.textContent = cat.name.replace('\n',' ');
+  badge.style.background = cat.color + '30';
+  badge.style.color = cat.color;
+  badge.style.border = `1px solid ${cat.color}60`;
+
+  const pBadge = document.getElementById('q-pts-badge');
+  pBadge.textContent = q.pts + ' очков';
+  pBadge.style.color = cat.color;
+
+  document.getElementById('q-text').textContent = q.q;
+  document.getElementById('q-answer-reveal').textContent = q.ans || '';
+  document.getElementById('q-answer-reveal').className = 'answer-reveal';
+
+  const optsEl = document.getElementById('q-opts');
+  optsEl.innerHTML = '';
+  const hint = document.getElementById('q-open-hint');
+  const revBtn = document.getElementById('q-reveal-btn');
+  revBtn.style.display = '';
+
+  if (q.opts) {
+    hint.style.display = 'none';
+    const letters = ['A','B','C','D'];
+    q.opts.forEach((o,i) => {
+      const d = document.createElement('div');
+      d.className = 'q-option';
+      d.innerHTML = `<span class="opt-letter">${letters[i]}</span><span>${o}</span>`;
+      d.onclick = () => {
+        document.querySelectorAll('.q-option').forEach((el,j) => {
+          el.className = 'q-option' + (j===q.ans?' correct':' wrong');
+          el.onclick=null;
+        });
+        revBtn.style.display = 'none';
+      };
+      optsEl.appendChild(d);
+    });
+  } else {
+    hint.style.display = 'block';
+    hint.textContent = 'Открытый вопрос — команды записывают ответ';
+  }
+
+  document.getElementById('q-main').className = 'q-main fade';
+  showScreen('question');
+}
+function revealAnswer() {
+  const r = document.getElementById('q-answer-reveal');
+  r.className = 'answer-reveal visible';
+  document.getElementById('q-reveal-btn').style.display = 'none';
+}
+
+// ══════════════════════════════════════════
+// PERSISTENCE
+// ══════════════════════════════════════════
+const STORAGE_KEY = 'quiz_state_v1';
+
+function saveState() {
+  const state = {
+    usedCards,
+    warmupIdx,
+    currentScreen: document.querySelector('.screen.active')?.id || 'board'
+  };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch(e) { return null; }
+}
+
+function resetAll() {
+  if (!confirm('Сбросить весь прогресс квиза?')) return;
+  try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+  usedCards = {};
+  warmupIdx = 0;
+  warmupAnswerShown = false;
+  renderWarmup();
+  showScreen('board');
+  buildBoard();
+}
+
+// ══════════════════════════════════════════
+// SCREENS
+// ══════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  saveState();
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+(function init() {
+  const state = loadState();
+  if (state) {
+    usedCards = state.usedCards || {};
+    warmupIdx = state.warmupIdx || 0;
+  }
+  renderWarmup();
+  // Always start on board after reload (warmup accessible via button)
+  showScreen('board');
+  buildBoard();
+})();
+</script>
+
+<!-- Warmup button fixed bottom-left -->
+<div style="position:fixed;bottom:14px;left:14px;z-index:999;display:flex;gap:8px;align-items:center">
+  <button class="btn" style="background:#1a1d2e;color:#555;border:1px solid #2a2d45;font-size:12px;padding:6px 12px;opacity:.7"
+    onclick="showScreen('warmup');renderWarmup()">⚡ Разминка</button>
+  <button class="btn" style="background:#1a1d2e;color:#444;border:1px solid #1e2030;font-size:12px;padding:6px 12px;opacity:.5"
+    onclick="resetAll()">↺ Сброс</button>
+</div>
+
+</body>
+</html>

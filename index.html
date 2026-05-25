@@ -309,7 +309,7 @@
 <!-- ═══════════ WARMUP ═══════════ -->
 <div class="screen active" id="warmup">
   <div style="width:100%;max-width:860px">
-    <div class="warmup-title">⚡ Разминка</div>
+    <div class="warmup-title">Разминка</div>
     <div class="warmup-q" id="wq-text"></div>
     <div class="warmup-opts" id="wq-opts"></div>
     <div class="warmup-answer" id="wq-answer"></div>
@@ -325,13 +325,13 @@
 <!-- ═══════════ BOARD ═══════════ -->
 <div class="screen" id="board">
   <div class="board-header">
-    <div class="board-title">🧠 Квиз <span>IT & Веб-дизайн</span></div>
+    <div class="board-title">Квиз <span>IT & Веб-дизайн</span></div>
     <div class="timer-bar">
       <div class="timer-display" id="timer-display">—</div>
       <button class="btn btn-timer" onclick="startTimer(30)" id="btn-t30">30 с</button>
       <button class="btn btn-timer" onclick="startTimer(60)" id="btn-t60">1 мин</button>
-      <button class="btn btn-stop" onclick="stopTimer()">⏹ Стоп</button>
-      <button class="btn btn-reset" onclick="resetTimer()">↺</button>
+      <button class="btn btn-stop" onclick="stopTimer()">Стоп</button>
+      <button class="btn btn-reset" onclick="resetTimer()">Сброс</button>
     </div>
   </div>
   <div class="categories" id="categories-grid"></div>
@@ -344,9 +344,9 @@
     <div class="q-category-badge" id="q-cat-badge"></div>
     <div class="q-points-badge" id="q-pts-badge"></div>
     <div style="margin-left:auto;display:flex;gap:10px;align-items:center">
-      <button class="btn btn-timer btn-sm" onclick="startTimer(30)">⏱ 30 с</button>
-      <button class="btn btn-timer btn-sm" onclick="startTimer(60)">⏱ 1 мин</button>
-      <button class="btn btn-stop btn-sm" onclick="stopTimer()">⏹</button>
+      <button class="btn btn-timer btn-sm" onclick="startTimer(30)">30 с</button>
+      <button class="btn btn-timer btn-sm" onclick="startTimer(60)">1 мин</button>
+      <button class="btn btn-stop btn-sm" onclick="stopTimer()">Стоп</button>
       <div class="q-timer-inline" id="q-timer-inline">—</div>
     </div>
   </div>
@@ -357,8 +357,8 @@
     <div class="answer-reveal" id="q-answer-reveal"></div>
   </div>
   <div class="q-footer">
-    <button class="btn btn-reveal" id="q-reveal-btn" onclick="revealAnswer()">✓ Показать ответ</button>
-    <button class="btn btn-back" onclick="goBoard()">↩ Вернуться к таблице</button>
+    <button class="btn btn-reveal" id="q-reveal-btn" onclick="revealAnswer()">Показать ответ</button>
+    <button class="btn btn-back" onclick="goBoard()">Вернуться к таблице</button>
   </div>
 </div>
 
@@ -627,6 +627,8 @@ function openQuestion(ci, qi, key, card) {
 
   if (q.opts) {
     hint.style.display = 'none';
+    revBtn.style.display = '';
+    document.getElementById('q-answer-reveal').style.display = '';
     const letters = ['A','B','C','D'];
     q.opts.forEach((o,i) => {
       const d = document.createElement('div');
@@ -644,6 +646,8 @@ function openQuestion(ci, qi, key, card) {
   } else {
     hint.style.display = 'block';
     hint.textContent = 'Открытый вопрос — команды записывают ответ';
+    revBtn.style.display = 'none';
+    document.getElementById('q-answer-reveal').style.display = 'none';
   }
 
   document.getElementById('q-main').className = 'q-main fade';
@@ -716,9 +720,9 @@ function showScreen(id) {
 <!-- Warmup button fixed bottom-left -->
 <div style="position:fixed;bottom:14px;left:14px;z-index:999;display:flex;gap:8px;align-items:center">
   <button class="btn" style="background:#1a1d2e;color:#555;border:1px solid #2a2d45;font-size:12px;padding:6px 12px;opacity:.7"
-    onclick="showScreen('warmup');renderWarmup()">⚡ Разминка</button>
+    onclick="showScreen('warmup');renderWarmup()">Разминка</button>
   <button class="btn" style="background:#1a1d2e;color:#444;border:1px solid #1e2030;font-size:12px;padding:6px 12px;opacity:.5"
-    onclick="resetAll()">↺ Сброс</button>
+    onclick="resetAll()">Сброс</button>
 </div>
 
 </body>
